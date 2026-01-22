@@ -88,3 +88,53 @@ impl RequestLine {
         &self.version
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_good_get_request_line() {
+        let request_line_result = RequestLine::parse(b"GET / HTTP/1.1\r\n\r\n");
+
+        assert!(request_line_result.is_ok());
+
+        let request_line_result = request_line_result.unwrap();
+
+        assert!(request_line_result.is_some());
+
+        let (request, consumed) = request_line_result.unwrap();
+
+        assert_eq!(consumed, 16);
+
+        assert_eq!(request.get_method(), "GET");
+        assert_eq!(request.get_path(), "/");
+        assert_eq!(request.get_version(), "HTTP/1.1");
+    }
+
+    #[test]
+    fn test_good_get_request_line_with_path() {
+        let request_line_result = RequestLine::parse(b"GET /coffee HTTP/1.1\r\n\r\n");
+
+        assert!(request_line_result.is_ok());
+
+        let request_line_result = request_line_result.unwrap();
+
+        assert!(request_line_result.is_some());
+
+        let (request, consumed) = request_line_result.unwrap();
+
+        assert_eq!(consumed, 22);
+
+        assert_eq!(request.get_method(), "GET");
+        assert_eq!(request.get_path(), "/coffee");
+        assert_eq!(request.get_version(), "HTTP/1.1");
+    }
+
+    #[test]
+    fn test_invalid_number_of_parts_in_request_line() {
+        let request_line_result = RequestLine::parse(b"coffee HTTP/1.1\r\n\r\n");
+
+        assert!(request_line_result.is_err());
+    }
+}
