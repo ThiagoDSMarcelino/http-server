@@ -101,9 +101,69 @@ impl Headers {
             }
 
             let value = String::from_utf8(parts[1].to_vec())
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?
+                .trim_start()
+                .to_string();
 
             self.set_string(key, value);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_single_header() {
+        let mut headers = Headers::new();
+        let data = b"Host: localhost:8080\r\n\r\n";
+
+        let result = headers.parse(data);
+        assert!(result.is_ok());
+
+        let (done, consumed) = result.unwrap();
+        assert!(done);
+        assert_eq!(consumed, data.len());
+
+        assert!(headers.get::<String>("Host").is_some());
+        assert_eq!(headers.get::<String>("Host").unwrap(), "localhost:8080");
+    }
+
+    #[test]
+    fn test_invalid_spacing_header() {
+        let mut headers = Headers::new();
+        let data = b"       Host : localhost:8080       \r\n\r\n";
+
+        let result = headers.parse(data);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_invalid_header_field_name() {
+        let mut headers = Headers::new();
+        let data = b"H\xA9st: localhost:8080\r\n\r\n";
+
+        let result = headers.parse(data);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_header_multiples_equals_field_names() {
+        let mut headers = Headers::new();
+        let data = b"Host: localhost:8080\r\nHost: localhost:8081\r\n\r\n";
+
+        let result = headers.parse(data);
+        assert!(result.is_ok());
+
+        let (done, consumed) = result.unwrap();
+        assert!(done);
+        assert_eq!(consumed, data.len());
+
+        assert!(headers.get::<String>("Host").is_some());
+        assert_eq!(
+            headers.get::<String>("Host").unwrap(),
+            "localhost:8080, localhost:8081"
+        );
     }
 }
