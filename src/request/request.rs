@@ -3,7 +3,7 @@ use crate::body;
 use crate::headers::Headers;
 use crate::request_line::RequestLine;
 
-use std::io;
+use std::io::{self, Read};
 
 pub struct Request {
     method: String,
@@ -44,6 +44,10 @@ impl Request {
 
     pub fn get_path(&self) -> &str {
         &self.path
+    }
+
+    pub fn get_version(&self) -> &str {
+        &self.version
     }
 
     pub fn get_body(&self) -> &Vec<u8> {
@@ -148,5 +152,112 @@ impl Request {
         }
 
         return Ok(request);
+    }
+}
+
+struct ChunkReader<'a> {
+    data: &'a [u8],
+    num_bytes_per_read: usize,
+    pos: usize,
+}
+
+impl<'a> ChunkReader<'a> {
+    fn new(data: &'a [u8], num_bytes_per_read: usize) -> Self {
+        ChunkReader {
+            data,
+            num_bytes_per_read,
+            pos: 0,
+        }
+    }
+}
+
+impl Read for ChunkReader<'_> {
+    // Read reads up to len(p) or numBytesPerRead bytes from the string per call
+    // its useful for simulating reading a variable number of bytes per chunk from a network connection
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
+        if self.pos >= self.data.len() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "EOF",
+            ));
+        }
+
+        let end_index = std::cmp::min(self.pos + self.num_bytes_per_read, self.data.len());
+        let available_chunk = end_index - self.pos;
+        let n = std::cmp::min(buf.len(), available_chunk);
+
+        buf[..n].copy_from_slice(&self.data[self.pos..self.pos + n]);
+        self.pos += n;
+
+        Ok(n)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_good_get_request_receiving_under_size_buffer() {
+        let reader = ChunkReader::new(b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n", 8);
+        let request_result = Request::from_reader(Box::new(reader));
+
+        assert!(request_result.is_ok());
+
+        let request = request_result.unwrap();
+
+        assert_eq!(request.get_method(), "GET");
+        assert_eq!(request.get_path(), "/");
+        assert_eq!(request.get_version(), "HTTP/1.1");
+
+        assert!(request.get_headers().get::<String>("Host").is_some());
+        assert_eq!(
+            request.get_headers().get::<String>("Host").unwrap(),
+            "localhost:8080"
+        );
+
+        assert!(request.get_headers().get::<String>("User-Agent").is_some());
+        assert_eq!(
+            request.get_headers().get::<String>("User-Agent").unwrap(),
+            "curl/7.81.0"
+        );
+
+        assert!(request.get_headers().get::<String>("Accept").is_some());
+        assert_eq!(
+            request.get_headers().get::<String>("Accept").unwrap(),
+            "*/*"
+        );
+    }
+
+    #[test]
+    fn test_good_get_request_receiving_over_size_buffer() {
+        let reader = ChunkReader::new(b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n", 1024);
+        let request_result = Request::from_reader(Box::new(reader));
+
+        assert!(request_result.is_ok());
+
+        let request = request_result.unwrap();
+
+        assert_eq!(request.get_method(), "GET");
+        assert_eq!(request.get_path(), "/");
+        assert_eq!(request.get_version(), "HTTP/1.1");
+
+        assert!(request.get_headers().get::<String>("Host").is_some());
+        assert_eq!(
+            request.get_headers().get::<String>("Host").unwrap(),
+            "localhost:8080"
+        );
+
+        assert!(request.get_headers().get::<String>("User-Agent").is_some());
+        assert_eq!(
+            request.get_headers().get::<String>("User-Agent").unwrap(),
+            "curl/7.81.0"
+        );
+
+        assert!(request.get_headers().get::<String>("Accept").is_some());
+        assert_eq!(
+            request.get_headers().get::<String>("Accept").unwrap(),
+            "*/*"
+        );
     }
 }
