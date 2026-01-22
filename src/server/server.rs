@@ -1,5 +1,5 @@
-use std::net::TcpListener;
 use crate::request::Request;
+use std::net::TcpListener;
 
 pub struct Server {
     listener: TcpListener,
@@ -17,7 +17,11 @@ impl Server {
                 Ok(_stream) => {
                     let request = Request::from_reader(Box::new(_stream))?;
 
-                    println!("Received a request: {} {}", request.method, request.path);
+                    println!(
+                        "Received a request: {} {}",
+                        request.get_method(),
+                        request.get_path()
+                    );
                 }
                 Err(e) => {
                     eprintln!("Connection failed: {}", e);

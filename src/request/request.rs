@@ -1,10 +1,12 @@
 use super::request_state::RequestState;
+use crate::request_line::RequestLine;
 
 use std::io;
 
 pub struct Request {
-    pub method: String,
-    pub path: String,
+    method: String,
+    path: String,
+    version: String,
     state: RequestState,
 }
 
@@ -15,6 +17,7 @@ impl Request {
         Request {
             method: String::new(),
             path: String::new(),
+            version: String::new(),
             state: RequestState::StateInit,
         }
     }
@@ -23,9 +26,54 @@ impl Request {
         self.state == RequestState::StateDone
     }
 
+    pub fn get_method(&self) -> &str {
+        &self.method
+    }
+
+    pub fn get_path(&self) -> &str {
+        &self.path
+    }
+
     fn parse(&mut self, buffer: &[u8]) -> Result<usize, std::io::Error> {
-        self.state = RequestState::StateDone;
-        Ok(buffer.len())
+        let mut read: usize = 0;
+
+        loop {
+            let current_slice = &buffer[read..];
+
+            match self.state {
+                RequestState::StateInit => {
+                    self.state = RequestState::StateRequestLine;
+                }
+                RequestState::StateRequestLine => {
+                    let request_line_data = RequestLine::parse(current_slice)?;
+
+                    if request_line_data.is_none() {
+                        break;
+                    }
+
+                    let (rl, consumed) = request_line_data.unwrap();
+
+                    self.method = rl.get_method().to_string();
+                    self.path = rl.get_path().to_string();
+                    self.version = rl.get_version().to_string();
+
+                    self.state = RequestState::StateHeaders;
+
+                    read += consumed;
+                }
+                RequestState::StateHeaders => {
+                    self.state = RequestState::StateBody;
+                }
+                RequestState::StateBody => {
+                    self.state = RequestState::StateDone;
+                }
+                RequestState::StateDone => {
+                    break;
+                }
+            }
+        }
+
+        Ok(read)
     }
 
     pub fn from_reader(mut reader: Box<dyn io::Read>) -> Result<Self, std::io::Error> {
@@ -34,10 +82,7 @@ impl Request {
         let mut len = 0;
 
         while !request.done() {
-            let read_len = match reader.read(&mut buffer[len..]) {
-                Ok(n) => n,
-                Err(e) => return Err(e),
-            };
+            let read_len = reader.read(&mut buffer[len..])?;
 
             len += read_len;
 
