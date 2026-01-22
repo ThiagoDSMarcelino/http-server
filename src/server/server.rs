@@ -22,6 +22,7 @@ impl Server {
                         request.get_method(),
                         request.get_path()
                     );
+                    println!("{:?}", request.get_headers());
                 }
                 Err(e) => {
                     eprintln!("Connection failed: {}", e);

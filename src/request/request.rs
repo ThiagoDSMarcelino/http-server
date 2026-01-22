@@ -1,4 +1,5 @@
 use super::request_state::RequestState;
+use crate::headers::Headers;
 use crate::request_line::RequestLine;
 
 use std::io;
@@ -7,10 +8,13 @@ pub struct Request {
     method: String,
     path: String,
     version: String,
+    headers: Headers,
     state: RequestState,
 }
 
 const BUFFER_SIZE: usize = 4096;
+
+const CONTENT_LENGTH_HEADER: &str = "Content-Length";
 
 impl Request {
     fn new() -> Self {
@@ -18,8 +22,13 @@ impl Request {
             method: String::new(),
             path: String::new(),
             version: String::new(),
+            headers: Headers::new(),
             state: RequestState::StateInit,
         }
+    }
+
+    pub fn get_headers(&self) -> &Headers {
+        &self.headers
     }
 
     fn done(&self) -> bool {
@@ -62,7 +71,23 @@ impl Request {
                     read += consumed;
                 }
                 RequestState::StateHeaders => {
-                    self.state = RequestState::StateBody;
+                    let (done, consumed) = self.headers.parse(current_slice)?;
+
+                    read += consumed;
+
+                    if done {
+                        if self.headers.contains(CONTENT_LENGTH_HEADER) {
+                            self.state = RequestState::StateBody;
+                        } else {
+                            self.state = RequestState::StateDone;
+                        }
+
+                        continue;
+                    }
+
+                    if consumed == 0 {
+                        break;
+                    }
                 }
                 RequestState::StateBody => {
                     self.state = RequestState::StateDone;
