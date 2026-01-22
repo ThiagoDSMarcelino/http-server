@@ -1,4 +1,5 @@
 use super::request_state::RequestState;
+use crate::body;
 use crate::headers::Headers;
 use crate::request_line::RequestLine;
 
@@ -9,6 +10,7 @@ pub struct Request {
     path: String,
     version: String,
     headers: Headers,
+    body: Vec<u8>,
     state: RequestState,
 }
 
@@ -23,6 +25,7 @@ impl Request {
             path: String::new(),
             version: String::new(),
             headers: Headers::new(),
+            body: Vec::new(),
             state: RequestState::StateInit,
         }
     }
@@ -41,6 +44,10 @@ impl Request {
 
     pub fn get_path(&self) -> &str {
         &self.path
+    }
+
+    pub fn get_body(&self) -> &Vec<u8> {
+        &self.body
     }
 
     fn parse(&mut self, buffer: &[u8]) -> Result<usize, std::io::Error> {
@@ -76,6 +83,10 @@ impl Request {
                     read += consumed;
 
                     if done {
+                        // FIXME: Improve body detection
+                        // Technically, there are cases where a body can be present without
+                        // a Content-Length header (e.g., Transfer-Encoding: chunked), but
+                        // for simplicity, we only check for Content-Length here.
                         if self.headers.contains(CONTENT_LENGTH_HEADER) {
                             self.state = RequestState::StateBody;
                         } else {
@@ -90,7 +101,26 @@ impl Request {
                     }
                 }
                 RequestState::StateBody => {
-                    self.state = RequestState::StateDone;
+                    let content_length = self.headers.get::<usize>(CONTENT_LENGTH_HEADER);
+
+                    if content_length.is_none() {
+                        self.state = RequestState::StateDone;
+                        continue;
+                    }
+
+                    let (done, consumed) =
+                        body::parse(&mut self.body, current_slice, content_length.unwrap())?;
+
+                    if done {
+                        self.state = RequestState::StateDone;
+                        continue;
+                    }
+
+                    if consumed == 0 {
+                        break;
+                    }
+
+                    read += consumed;
                 }
                 RequestState::StateDone => {
                     break;

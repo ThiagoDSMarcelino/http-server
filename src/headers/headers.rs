@@ -28,6 +28,18 @@ impl Headers {
         }
     }
 
+    pub fn get<T: std::str::FromStr>(&self, key: &str) -> Option<T> {
+        let local_key = key.to_lowercase();
+
+        if let Some(value) = self.data.get(&local_key) {
+            if let Ok(parsed) = value.trim().parse::<T>() {
+                return Some(parsed);
+            }
+        }
+
+        None
+    }
+
     fn set_string(&mut self, key: String, value: String) {
         let local_key = key.to_lowercase().to_string();
 

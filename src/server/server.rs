@@ -13,6 +13,7 @@ impl Server {
 
     pub fn serve(&self) -> Result<(), std::io::Error> {
         for stream in self.listener.incoming() {
+            // TODO: Handle each connection in a separate thread
             match stream {
                 Ok(_stream) => {
                     let request = Request::from_reader(Box::new(_stream))?;
@@ -23,6 +24,7 @@ impl Server {
                         request.get_path()
                     );
                     println!("{:?}", request.get_headers());
+                    println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
                 }
                 Err(e) => {
                     eprintln!("Connection failed: {}", e);
