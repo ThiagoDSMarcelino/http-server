@@ -40,7 +40,9 @@ impl Headers {
         None
     }
 
-    fn set_string(&mut self, key: String, value: String) {
+    fn set(&mut self, key: String, value: String) {
+        // Header field names are case-insensitive
+        // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
         let local_key = key.to_lowercase().to_string();
 
         self.data
@@ -105,7 +107,7 @@ impl Headers {
                 .trim_start()
                 .to_string();
 
-            self.set_string(key, value);
+            self.set(key, value);
         }
     }
 }
