@@ -46,6 +46,7 @@ impl Request {
         &self.path
     }
 
+    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_version(&self) -> &str {
         &self.version
     }
@@ -155,46 +156,47 @@ impl Request {
     }
 }
 
-struct ChunkReader<'a> {
-    data: &'a [u8],
-    num_bytes_per_read: usize,
-    pos: usize,
-}
-
-impl<'a> ChunkReader<'a> {
-    fn new(data: &'a [u8], num_bytes_per_read: usize) -> Self {
-        ChunkReader {
-            data,
-            num_bytes_per_read,
-            pos: 0,
-        }
-    }
-}
-
-impl Read for ChunkReader<'_> {
-    // Read reads up to len(p) or numBytesPerRead bytes from the string per call
-    // its useful for simulating reading a variable number of bytes per chunk from a network connection
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
-        if self.pos >= self.data.len() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::UnexpectedEof,
-                "EOF",
-            ));
-        }
-
-        let end_index = std::cmp::min(self.pos + self.num_bytes_per_read, self.data.len());
-        let available_chunk = end_index - self.pos;
-        let n = std::cmp::min(buf.len(), available_chunk);
-
-        buf[..n].copy_from_slice(&self.data[self.pos..self.pos + n]);
-        self.pos += n;
-
-        Ok(n)
-    }
-}
-
 #[cfg(test)]
 mod tests {
+
+    struct ChunkReader<'a> {
+        data: &'a [u8],
+        num_bytes_per_read: usize,
+        pos: usize,
+    }
+
+    impl<'a> ChunkReader<'a> {
+        fn new(data: &'a [u8], num_bytes_per_read: usize) -> Self {
+            ChunkReader {
+                data,
+                num_bytes_per_read,
+                pos: 0,
+            }
+        }
+    }
+
+    impl Read for ChunkReader<'_> {
+        // Read reads up to len(p) or numBytesPerRead bytes from the string per call
+        // its useful for simulating reading a variable number of bytes per chunk from a network connection
+        fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
+            if self.pos >= self.data.len() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    "EOF",
+                ));
+            }
+
+            let end_index = std::cmp::min(self.pos + self.num_bytes_per_read, self.data.len());
+            let available_chunk = end_index - self.pos;
+            let n = std::cmp::min(buf.len(), available_chunk);
+
+            buf[..n].copy_from_slice(&self.data[self.pos..self.pos + n]);
+            self.pos += n;
+
+            Ok(n)
+        }
+    }
+
     use super::*;
 
     #[test]
