@@ -1,7 +1,7 @@
 use super::request_state::RequestState;
-use crate::body;
-use crate::headers::Headers;
-use crate::request_line::RequestLine;
+use super::body;
+use super::headers::Headers;
+use super::request_line::RequestLine;
 
 use std::io::{self, Read};
 
