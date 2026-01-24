@@ -3,7 +3,7 @@ use super::body;
 use super::headers::Headers;
 use super::request_line::RequestLine;
 
-use std::io::{self, Read};
+use std::io;
 
 pub struct Request {
     method: String,
@@ -136,7 +136,7 @@ impl Request {
         Ok(read)
     }
 
-    pub fn from_reader(mut reader: Box<dyn io::Read>) -> Result<Self, std::io::Error> {
+    pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, std::io::Error> {
         let mut request = Request::new();
         let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
         let mut len = 0;
@@ -175,7 +175,7 @@ mod tests {
         }
     }
 
-    impl Read for ChunkReader<'_> {
+    impl io::Read for ChunkReader<'_> {
         // Read reads up to len(p) or numBytesPerRead bytes from the string per call
         // its useful for simulating reading a variable number of bytes per chunk from a network connection
         fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn test_good_get_request_receiving_under_size_buffer() {
         let reader = ChunkReader::new(b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n", 8);
-        let request_result = Request::from_reader(Box::new(reader));
+        let request_result = Request::from_reader(reader);
 
         assert!(request_result.is_ok());
 
@@ -234,7 +234,7 @@ mod tests {
     #[test]
     fn test_good_get_request_receiving_over_size_buffer() {
         let reader = ChunkReader::new(b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n", 1024);
-        let request_result = Request::from_reader(Box::new(reader));
+        let request_result = Request::from_reader(reader);
 
         assert!(request_result.is_ok());
 

@@ -1,4 +1,7 @@
-use crate::request::Request;
+use crate::{
+    request::Request,
+    response::{StatusCode, write_status_line},
+};
 use std::{io::Write, net::TcpListener};
 
 pub struct Server {
@@ -25,13 +28,11 @@ impl Server {
                 Ok(s) => s,
                 Err(e) => {
                     eprintln!("Failed to accept connection: {}", e);
-                    continue; // Use 'continue' em vez de 'break' para não derrubar o servidor por 1 erro
+                    continue;
                 }
             };
 
-            let stream_reader = stream.try_clone()?;
-
-            let request = Request::from_reader(Box::new(stream_reader))?;
+            let request = Request::from_reader(&mut stream)?;
 
             println!(
                 "Received a request: {} {}",
@@ -41,9 +42,7 @@ impl Server {
             println!("{:?}", request.get_headers());
             println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
 
-            let default_response = b"HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, world!";
-
-            stream.write_all(default_response)?;
+            write_status_line(&mut stream, StatusCode::Ok)?;
             stream.flush()?;
         }
 
