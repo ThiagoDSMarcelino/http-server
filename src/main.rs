@@ -4,8 +4,10 @@ mod request_line;
 mod headers;
 mod body;
 
-fn main() {
-    let server = server::Server::new("0.0.0.0", 8080).unwrap();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let server = server::Server::new("0.0.0.0", 8080)?;
 
-    server.serve().unwrap();
+    server.serve()?;
+
+    Ok(())
 }
