@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use tokio::io::AsyncReadExt;
 
 use crate::headers::Headers;
@@ -10,6 +12,7 @@ pub struct Request {
     method: String,
     path: String,
     version: String,
+    query: HashMap<String, String>,
     headers: Headers,
     body: Vec<u8>,
     state: RequestState,
@@ -25,6 +28,7 @@ impl Request {
             method: String::new(),
             path: String::new(),
             version: String::new(),
+            query: HashMap::new(),
             headers: Headers::new(),
             body: Vec::new(),
             state: RequestState::StateInit,
@@ -55,6 +59,13 @@ impl Request {
         &self.body
     }
 
+    fn set_request_line(&mut self, rl: RequestLine) {
+        self.method = rl.method;
+        self.path = rl.path;
+        self.version = rl.version;
+        self.query = rl.query;
+    }
+
     fn parse(&mut self, buffer: &[u8]) -> Result<usize, std::io::Error> {
         let mut read: usize = 0;
 
@@ -74,9 +85,7 @@ impl Request {
 
                     let (rl, consumed) = request_line_data.unwrap();
 
-                    self.method = rl.get_method().to_string();
-                    self.path = rl.get_path().to_string();
-                    self.version = rl.get_version().to_string();
+                    self.set_request_line(rl);
 
                     self.state = RequestState::StateHeaders;
 

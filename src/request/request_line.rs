@@ -1,13 +1,16 @@
-use std::io;
+use std::{collections::HashMap, io};
 
 pub(super) struct RequestLine {
-    method: String,
-    path: String,
-    version: String,
+    pub(crate) method: String,
+    pub(crate) path: String,
+    pub(crate) query: HashMap<String, String>,
+    pub(crate) version: String,
 }
 
 // Theoretically, \n could be the separator as well if the first line ends with it, but for now we only support \r\n.
 const LINE_SEPARATOR: &[u8] = b"\r\n";
+const QUERY_SEPARATOR: char = '?';
+const PARAMETER_SEPARATOR: char = '&';
 
 fn is_valid_method(method: &str) -> bool {
     matches!(
@@ -53,8 +56,29 @@ impl RequestLine {
             ));
         }
 
-        let path = String::from_utf8(parts[1].to_vec())
+        let target = String::from_utf8(parts[1].to_vec())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+        let (path, _query) = match target.find(QUERY_SEPARATOR) {
+            Some(pos) => (&target[..pos], &target[pos + 1..]),
+            None => (target.as_str(), ""),
+        };
+
+        let mut query = HashMap::new();
+        for param in _query.split(PARAMETER_SEPARATOR) {
+            if param.is_empty() {
+                continue;
+            }
+
+            let mut key_value = param.splitn(2, '=');
+            let key = key_value.next().unwrap_or("");
+            if key.is_empty() {
+                continue;
+            }
+
+            let value = key_value.next().unwrap_or("").to_string();
+            query.insert(key.to_string(), value);
+        }
 
         let version = String::from_utf8(parts[2].to_vec())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -69,23 +93,12 @@ impl RequestLine {
         let bytes_consumed = index.unwrap() + LINE_SEPARATOR.len();
         let request_line = RequestLine {
             method,
-            path,
+            path: path.to_string(),
+            query,
             version,
         };
 
         Ok(Some((request_line, bytes_consumed)))
-    }
-
-    pub fn get_method(&self) -> &str {
-        &self.method
-    }
-
-    pub fn get_path(&self) -> &str {
-        &self.path
-    }
-
-    pub fn get_version(&self) -> &str {
-        &self.version
     }
 }
 
@@ -103,13 +116,13 @@ mod tests {
 
         assert!(request_line_result.is_some());
 
-        let (request, consumed) = request_line_result.unwrap();
+        let (request_line, consumed) = request_line_result.unwrap();
 
         assert_eq!(consumed, 16);
 
-        assert_eq!(request.get_method(), "GET");
-        assert_eq!(request.get_path(), "/");
-        assert_eq!(request.get_version(), "HTTP/1.1");
+        assert_eq!(request_line.method, "GET");
+        assert_eq!(request_line.path, "/");
+        assert_eq!(request_line.version, "HTTP/1.1");
     }
 
     #[test]
@@ -122,13 +135,13 @@ mod tests {
 
         assert!(request_line_result.is_some());
 
-        let (request, consumed) = request_line_result.unwrap();
+        let (request_line, consumed) = request_line_result.unwrap();
 
         assert_eq!(consumed, 22);
 
-        assert_eq!(request.get_method(), "GET");
-        assert_eq!(request.get_path(), "/coffee");
-        assert_eq!(request.get_version(), "HTTP/1.1");
+        assert_eq!(request_line.method, "GET");
+        assert_eq!(request_line.path, "/coffee");
+        assert_eq!(request_line.version, "HTTP/1.1");
     }
 
     #[test]
