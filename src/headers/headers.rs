@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use regex::Regex;
 
 #[derive(Debug)]
-pub(crate) struct Headers {
+pub struct Headers {
     data: HashMap<String, String>,
 }
 
@@ -22,10 +22,14 @@ fn is_valid_key(key: &str) -> bool {
 }
 
 impl Headers {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Headers {
             data: HashMap::new(),
         }
+    }
+
+    pub fn iter(&'_ self) -> std::collections::hash_map::Iter<'_, String, String> {
+        self.data.iter()
     }
 
     pub fn get<T: std::str::FromStr>(&self, key: &str) -> Option<T> {
@@ -40,7 +44,7 @@ impl Headers {
         None
     }
 
-    fn set(&mut self, key: String, value: String) {
+    pub fn set(&mut self, key: &str, value: &str) {
         // Header field names are case-insensitive
         // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
         let local_key = key.to_lowercase().to_string();
@@ -49,12 +53,12 @@ impl Headers {
             .entry(local_key)
             .and_modify(|current| {
                 current.push_str(", ");
-                current.push_str(&value);
+                current.push_str(value);
             })
-            .or_insert(value);
+            .or_insert(value.to_string());
     }
 
-    pub(crate) fn contains(&self, key: &str) -> bool {
+    pub fn contains(&self, key: &str) -> bool {
         let local_key = key.to_lowercase();
 
         self.data.contains_key(&local_key)
@@ -107,7 +111,7 @@ impl Headers {
                 .trim_start()
                 .to_string();
 
-            self.set(key, value);
+            self.set(&key, &value);
         }
     }
 }

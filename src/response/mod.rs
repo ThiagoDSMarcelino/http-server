@@ -1,5 +1,5 @@
+mod response;
 mod status_code;
-mod status_line;
 
+pub use response::{get_default_headers, write_headers, write_status_line};
 pub use status_code::StatusCode;
-pub use status_line::write_status_line;

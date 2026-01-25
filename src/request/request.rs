@@ -1,7 +1,8 @@
-use super::request_state::RequestState;
+use crate::headers::Headers;
+
 use super::body;
-use super::headers::Headers;
 use super::request_line::RequestLine;
+use super::request_state::RequestState;
 
 use std::io;
 

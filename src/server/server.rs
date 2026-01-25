@@ -1,6 +1,6 @@
 use crate::{
     request::Request,
-    response::{StatusCode, write_status_line},
+    response::{self, StatusCode},
 };
 use std::{io::Write, net::TcpListener};
 
@@ -42,7 +42,10 @@ impl Server {
             println!("{:?}", request.get_headers());
             println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
 
-            write_status_line(&mut stream, StatusCode::Ok)?;
+            let response_headers = response::get_default_headers(0);
+            response::write_status_line(&mut stream, StatusCode::Ok)?;
+            response::write_headers(&mut stream, &response_headers)?;
+
             stream.flush()?;
         }
 

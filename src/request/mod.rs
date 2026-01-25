@@ -1,7 +1,6 @@
-mod request_state;
+mod body;
 mod request;
 mod request_line;
-mod headers;
-mod body;
+mod request_state;
 
 pub use request::Request;
