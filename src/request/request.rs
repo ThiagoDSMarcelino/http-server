@@ -8,6 +8,7 @@ use super::body;
 use super::request_line::RequestLine;
 use super::request_state::RequestState;
 
+/// Represents an HTTP request.
 pub struct Request {
     method: String,
     path: String,
@@ -33,6 +34,7 @@ impl Request {
         }
     }
 
+    /// Returns a reference to the headers of the request.
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
@@ -41,22 +43,27 @@ impl Request {
         self.state == RequestState::StateDone
     }
 
+    /// Returns the HTTP method of the request.
     pub fn method(&self) -> &str {
         &self.method
     }
 
+    /// Returns the path of the request.
     pub fn path(&self) -> &str {
         &self.path
     }
 
+    /// Returns the HTTP version of the request.
     pub fn http_version(&self) -> &str {
         &self.version
     }
 
+    /// Returns the body of the request.
     pub fn body(&self) -> &Vec<u8> {
         &self.body
     }
 
+    /// Returns the query parameters of the request.
     pub fn query(&self) -> &HashMap<String, String> {
         &self.query
     }

@@ -5,6 +5,7 @@ use crate::{
     response::StatusCode, responses::HttpResponse,
 };
 
+/// Represents an HTTP response.
 pub struct Response {
     body: Vec<u8>,
     headers: Headers,
@@ -16,10 +17,12 @@ const HTTP_VERSION: &str = "HTTP/1.1";
 const CONTENT_TYPE_JSON: &str = "application/json; charset=utf-8";
 
 impl Response {
+    /// Returns a mutable reference to the headers of the response.
     pub fn headers(&mut self) -> &mut Headers {
         &mut self.headers
     }
 
+    /// Returns a mutable reference to the headers of the response.
     pub fn headers_mut(&mut self) -> &mut Headers {
         &mut self.headers
     }

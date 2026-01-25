@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::OnceLock};
 
 use regex::Regex;
 
+/// Represents HTTP headers.
 #[derive(Debug)]
 pub struct Headers {
     data: HashMap<String, (String, String)>,
@@ -27,18 +28,20 @@ fn is_valid_key(key: &str) -> bool {
 // TODO: Find a better way to store headers while keeping the original case of the keys
 // for now we store the original key alongside the value
 impl Headers {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Headers {
             data: HashMap::new(),
         }
     }
 
+    /// Returns an iterator over the headers.
     pub fn iter(&'_ self) -> impl Iterator<Item = (&String, &String)> {
         self.data
             .values()
             .map(|(original_key, value)| (original_key, value))
     }
 
+    /// Gets the value of a header and tries to parse it to the specified type.
     pub fn get<T: std::str::FromStr>(&self, key: &str) -> Option<T> {
         let local_key = key.to_lowercase();
 
@@ -51,6 +54,7 @@ impl Headers {
         None
     }
 
+    /// Sets the value of a header, replacing any existing value.
     pub fn set(&mut self, key: &str, value: &str) {
         let local_key = key.to_lowercase().to_string();
 
@@ -58,6 +62,7 @@ impl Headers {
             .insert(local_key, (key.to_string(), value.to_string()));
     }
 
+    /// Adds a value to a header. If the header already exists, appends the new value
     pub fn add(&mut self, key: &str, value: &str) {
         let local_key = key.to_lowercase().to_string();
 
@@ -70,6 +75,7 @@ impl Headers {
             .or_insert((key.to_string(), value.to_string()));
     }
 
+    /// Checks if a header exists.
     pub fn contains(&self, key: &str) -> bool {
         let local_key = key.to_lowercase();
 

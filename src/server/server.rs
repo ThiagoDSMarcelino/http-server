@@ -5,12 +5,14 @@ use crate::{
 };
 use tokio::{io::AsyncWriteExt, net::TcpListener};
 
+/// Represents an HTTP server.
 pub struct Server {
     addr: String,
     router: Router,
 }
 
 impl Server {
+    /// Creates a new Server instance with the specified address and router.
     pub fn new(addr: &str, router: Router) -> Self {
         Server {
             addr: addr.to_string(),
@@ -18,6 +20,7 @@ impl Server {
         }
     }
 
+    /// Starts the server and begins listening for incoming connections.
     pub async fn serve(self) -> Result<(), std::io::Error> {
         let listener = TcpListener::bind(&self.addr).await?;
 

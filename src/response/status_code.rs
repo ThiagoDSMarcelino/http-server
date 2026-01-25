@@ -10,6 +10,7 @@ pub enum StatusCode {
 }
 
 impl StatusCode {
+    /// Returns the standard reason phrase for the status code.
     pub fn as_str(&self) -> &'static str {
         match self {
             StatusCode::Ok => "OK",

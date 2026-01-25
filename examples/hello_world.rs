@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            OkResponse::new("Hello, World!").into()
+            OkResponse::from("Hello, World!").into()
         }),
     );
 
