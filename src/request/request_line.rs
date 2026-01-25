@@ -108,7 +108,8 @@ mod tests {
 
     #[test]
     fn test_good_get_request_line() {
-        let request_line_result = RequestLine::parse(b"GET / HTTP/1.1\r\n\r\n");
+        let data = b"GET / HTTP/1.1\r\n\r\n";
+        let request_line_result = RequestLine::parse(data);
 
         assert!(request_line_result.is_ok());
 
@@ -118,7 +119,7 @@ mod tests {
 
         let (request_line, consumed) = request_line_result.unwrap();
 
-        assert_eq!(consumed, 16);
+        assert_eq!(consumed, data.len() - 2);
 
         assert_eq!(request_line.method, "GET");
         assert_eq!(request_line.path, "/");
@@ -127,7 +128,8 @@ mod tests {
 
     #[test]
     fn test_good_get_request_line_with_path() {
-        let request_line_result = RequestLine::parse(b"GET /coffee HTTP/1.1\r\n\r\n");
+        let data = b"GET /coffee HTTP/1.1\r\n\r\n";
+        let request_line_result = RequestLine::parse(data);
 
         assert!(request_line_result.is_ok());
 
@@ -137,7 +139,7 @@ mod tests {
 
         let (request_line, consumed) = request_line_result.unwrap();
 
-        assert_eq!(consumed, 22);
+        assert_eq!(consumed, data.len() - 2);
 
         assert_eq!(request_line.method, "GET");
         assert_eq!(request_line.path, "/coffee");
@@ -149,5 +151,34 @@ mod tests {
         let request_line_result = RequestLine::parse(b"coffee HTTP/1.1\r\n\r\n");
 
         assert!(request_line_result.is_err());
+    }
+
+    #[test]
+    fn test_invalid_method_in_request_line() {
+        let request_line_result = RequestLine::parse(b"BREW /coffee HTTP/1.1\r\n\r\n");
+
+        assert!(request_line_result.is_err());
+    }
+
+    #[test]
+    fn test_query_parameters_in_request_line() {
+        let data = b"GET /search?query=coffee&sort=asc HTTP/1.1\r\n\r\n";
+        let request_line_result = RequestLine::parse(data);
+
+        assert!(request_line_result.is_ok());
+
+        let request_line_result = request_line_result.unwrap();
+
+        assert!(request_line_result.is_some());
+
+        let (request_line, consumed) = request_line_result.unwrap();
+
+        assert_eq!(consumed, data.len() - 2);
+
+        assert_eq!(request_line.method, "GET");
+        assert_eq!(request_line.path, "/search");
+        assert_eq!(request_line.version, "HTTP/1.1");
+        assert_eq!(request_line.query.get("query").unwrap(), "coffee");
+        assert_eq!(request_line.query.get("sort").unwrap(), "asc");
     }
 }
