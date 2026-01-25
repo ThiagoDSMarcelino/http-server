@@ -1,4 +1,6 @@
-#[derive(Debug, Copy, Clone)]
+use serde::Serialize;
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
 pub enum StatusCode {
     Ok = 200,
     BadRequest = 400,

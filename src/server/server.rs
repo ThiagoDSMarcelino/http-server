@@ -1,35 +1,32 @@
-use std::sync::Arc;
-
 use crate::{
+    Router,
     request::Request,
     response::{Response, StatusCode},
-    server::errors::HttpError,
 };
 use tokio::{io::AsyncWriteExt, net::TcpListener};
 
-pub type HttpResult<T> = Result<T, Box<dyn HttpError>>;
-pub type Handler = Arc<dyn Fn(&Request, &mut Response) -> HttpResult<()> + Send + Sync + 'static>;
-
 pub struct Server {
     addr: String,
-    handler: Handler,
+    router: Router,
 }
 
 impl Server {
-    pub fn new(addr: &str, handler: Handler) -> Self {
+    pub fn new(addr: &str, router: Router) -> Self {
         Server {
             addr: addr.to_string(),
-            handler,
+            router,
         }
     }
 
-    pub async fn serve(&self) -> Result<(), std::io::Error> {
+    pub async fn serve(self) -> Result<(), std::io::Error> {
         let listener = TcpListener::bind(&self.addr).await?;
+
+        let routes_handler = self.router.build();
 
         loop {
             let (mut stream, _) = listener.accept().await?;
 
-            let handler = self.handler.clone();
+            let handler = routes_handler.clone();
 
             tokio::spawn(async move {
                 let mut response = Response::new();
