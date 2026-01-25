@@ -1,5 +1,5 @@
 use crate::{request::Request, response::Response};
-use std::{io::Write, net::TcpListener};
+use tokio::{io::AsyncWriteExt, net::TcpListener};
 
 pub struct Server {
     listener: TcpListener,
@@ -7,46 +7,51 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(host: &str, port: u16) -> Result<Self, std::io::Error> {
-        let listener = TcpListener::bind(format!("{}:{}", host, port))?;
+    pub async fn new(host: &str, port: u16) -> Result<Self, std::io::Error> {
+        let listener = TcpListener::bind(format!("{}:{}", host, port)).await?;
         Ok(Server {
             listener,
             closed: false,
         })
     }
 
-    pub fn serve(&self) -> Result<(), std::io::Error> {
-        for stream in self.listener.incoming() {
+    pub async fn serve(&self) -> Result<(), std::io::Error> {
+        loop {
+            let (mut stream, _) = self.listener.accept().await?;
+
             if self.closed {
-                break;
+                return Ok(());
             }
 
-            let mut stream = match stream {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!("Failed to accept connection: {}", e);
-                    continue;
+            tokio::spawn(async move {
+                let request = match Request::from_async_reader(&mut stream).await {
+                    Ok(req) => req,
+                    Err(e) => {
+                        // TODO: write error response
+                        eprintln!("Failed to parse request: {}", e);
+                        return;
+                    }
+                };
+
+                println!(
+                    "Received a request: {} {}",
+                    request.get_method(),
+                    request.get_path()
+                );
+                println!("{:?}", request.get_headers());
+                println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
+
+                let mut response = Response::new();
+                response.set_default_headers();
+                if let Err(err) = response.write_response(&mut stream).await {
+                    eprintln!("Failed to write response: {}", err);
                 }
-            };
 
-            let request = Request::from_reader(&mut stream)?;
-
-            println!(
-                "Received a request: {} {}",
-                request.get_method(),
-                request.get_path()
-            );
-            println!("{:?}", request.get_headers());
-            println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
-
-            let mut response = Response::new();
-
-            response.set_default_headers();
-            response.write_response(&mut stream)?;
-
-            stream.flush()?;
+                // Ensure all data is flushed to the stream
+                if let Err(err) = stream.flush().await {
+                    eprintln!("Failed to flush stream: {}", err);
+                }
+            });
         }
-
-        Ok(())
     }
 }

@@ -21,6 +21,11 @@ fn is_valid_key(key: &str) -> bool {
         && valid_key_chars_regex.is_match(key)
 }
 
+// Header field names are case-insensitive
+// https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
+// However the original casing should be preserved when setting and getting values.
+// For simplicity, we store all keys in lowercase.
+// TODO: Fix to preserve original casing when needed.
 impl Headers {
     pub fn new() -> Self {
         Headers {
@@ -45,16 +50,12 @@ impl Headers {
     }
 
     pub fn set(&mut self, key: &str, value: &str) {
-        // Header field names are case-insensitive
-        // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
         let local_key = key.to_lowercase().to_string();
 
         self.data.insert(local_key, value.to_string());
     }
 
     pub fn add(&mut self, key: &str, value: &str) {
-        // Header field names are case-insensitive
-        // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
         let local_key = key.to_lowercase().to_string();
 
         self.data

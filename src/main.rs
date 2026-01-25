@@ -1,12 +1,16 @@
+use crate::server::Server;
+
 mod headers;
 mod request;
 mod response;
 mod server;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let server = server::Server::new("0.0.0.0", 8080)?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let server = Server::new("0.0.0.0", 8080).await?;
 
-    server.serve()?;
+    println!("Server is running on 0.0.0.0:8080");
+    server.serve().await?;
 
     Ok(())
 }

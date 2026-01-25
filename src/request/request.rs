@@ -1,3 +1,5 @@
+use tokio::io::AsyncReadExt;
+
 use crate::headers::Headers;
 
 use super::body;
@@ -137,6 +139,7 @@ impl Request {
         Ok(read)
     }
 
+    #[allow(dead_code)] // TODO: Remove when used
     pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, std::io::Error> {
         let mut request = Request::new();
         let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
@@ -144,6 +147,27 @@ impl Request {
 
         while !request.done() {
             let read_len = reader.read(&mut buffer[len..])?;
+
+            len += read_len;
+
+            let processed_len = request.parse(&buffer[..len])?;
+
+            buffer.copy_within(processed_len..len, 0);
+            len -= processed_len;
+        }
+
+        return Ok(request);
+    }
+
+    pub async fn from_async_reader<R: tokio::io::AsyncRead + Unpin>(
+        mut reader: R,
+    ) -> Result<Self, std::io::Error> {
+        let mut request = Request::new();
+        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
+        let mut len = 0;
+
+        while !request.done() {
+            let read_len = reader.read(&mut buffer[len..]).await?;
 
             len += read_len;
 
