@@ -45,7 +45,7 @@ impl Request {
         &self.method
     }
 
-    pub fn get_path(&self) -> &str {
+    pub fn uri(&self) -> &str {
         &self.path
     }
 
@@ -233,7 +233,7 @@ mod tests {
         let request = request_result.unwrap();
 
         assert_eq!(request.get_method(), "GET");
-        assert_eq!(request.get_path(), "/");
+        assert_eq!(request.uri(), "/");
         assert_eq!(request.get_version(), "HTTP/1.1");
 
         assert!(request.get_headers().get::<String>("Host").is_some());
@@ -265,7 +265,7 @@ mod tests {
         let request = request_result.unwrap();
 
         assert_eq!(request.get_method(), "GET");
-        assert_eq!(request.get_path(), "/");
+        assert_eq!(request.uri(), "/");
         assert_eq!(request.get_version(), "HTTP/1.1");
 
         assert!(request.get_headers().get::<String>("Host").is_some());
