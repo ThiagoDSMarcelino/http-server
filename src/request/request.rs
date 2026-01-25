@@ -99,7 +99,7 @@ impl Request {
                     read += consumed;
 
                     if done {
-                        // FIXME: Improve body detection
+                        // TODO: Improve body detection
                         // Technically, there are cases where a body can be present without
                         // a Content-Length header (e.g., Transfer-Encoding: chunked), but
                         // for simplicity, we only check for Content-Length here.

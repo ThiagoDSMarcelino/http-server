@@ -1,3 +1,3 @@
-mod ok_result;
+mod ok_response;
 
-pub use ok_result::OkResult;
+pub use ok_response::OkResponse;

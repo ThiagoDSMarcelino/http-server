@@ -1,6 +1,6 @@
 // cargo run --example hello_world
 
-use http_server::{Router, Server, responses::{BadRequestError, OkResult}};
+use http_server::{Router, Server, responses::{BadRequestError, OkResponse}};
 
 use std::sync::Arc;
 
@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            OkResult::new("Hello, World!").into()
+            OkResponse::new("Hello, World!").into()
         }),
     );
 

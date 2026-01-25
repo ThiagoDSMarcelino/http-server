@@ -29,7 +29,7 @@ where
     T: HttpError,
 {
     fn into_response(self: Box<Self>) -> Vec<u8> {
-        // TODO: Handle serialization errors properly
+        // FIXME: Handle serialization errors properly
         serde_json::to_vec(&HttpErrorResponse::new(self.message(), self.status_code()))
             .unwrap_or_else(|_| "Error serializing".to_string().into_bytes())
     }

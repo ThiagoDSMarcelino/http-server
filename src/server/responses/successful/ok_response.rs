@@ -2,24 +2,23 @@ use serde::Serialize;
 
 use crate::{StatusCode, responses::HttpResponse};
 
-pub struct OkResult {
+pub struct OkResponse {
     data: Vec<u8>,
 }
 
-impl OkResult {
+impl OkResponse {
     pub fn new<T: Serialize>(data: T) -> Self {
-        // TODO: Handle serialization errors properly
+        // FIXME: Handle serialization errors properly
         let serialization = serde_json::to_vec(&data)
-            .map_err(|e| format!("Serialization failed: {}", e).as_bytes().to_vec())
-            .unwrap_or_else(|err_bytes| err_bytes);
+            .unwrap_or_else(|e| format!("Serialization failed: {}", e).as_bytes().to_vec());
 
-        OkResult {
+        OkResponse {
             data: serialization,
         }
     }
 }
 
-impl HttpResponse for OkResult {
+impl HttpResponse for OkResponse {
     fn into_response(self: Box<Self>) -> Vec<u8> {
         self.data
     }
