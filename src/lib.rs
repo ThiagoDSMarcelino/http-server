@@ -1,4 +1,4 @@
-mod headers;
+pub mod headers;
 mod request;
 mod response;
 mod server;

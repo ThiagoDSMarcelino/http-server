@@ -1,6 +1,10 @@
+use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 
-use crate::{headers::Headers, response::StatusCode};
+use crate::{
+    headers::{self, Headers},
+    response::StatusCode,
+};
 
 pub struct Response {
     body: Vec<u8>,
@@ -9,6 +13,8 @@ pub struct Response {
 }
 
 const HTTP_VERSION: &str = "HTTP/1.1";
+
+const CONTENT_TYPE_JSON: &str = "application/json; charset=utf-8";
 
 impl Response {
     pub fn new() -> Self {
@@ -23,9 +29,17 @@ impl Response {
         self.status_code = status_code;
     }
 
-    pub fn json<JSON: Into<Vec<u8>>>(&mut self, body: JSON) {
-        self.headers.set("Content-Type", "application/json; charset=utf-8");
-        self.body = body.into();
+    pub fn json<T: Serialize>(&mut self, body: T) {
+        self.headers
+            .set(headers::keys::CONTENT_TYPE_KEY, CONTENT_TYPE_JSON);
+
+        match serde_json::to_vec(&body) {
+            Ok(json_body) => self.body = json_body,
+            Err(_) => {
+                self.status_code = StatusCode::InternalServerError;
+                self.body = b"{\"error\":\"Failed to serialize JSON\"}".to_vec();
+            }
+        }
     }
 
     pub(crate) async fn write_response<W: tokio::io::AsyncWrite + Unpin>(
@@ -55,8 +69,16 @@ impl Response {
     }
 
     pub(crate) fn set_default_headers(&mut self) {
-        self.headers.set("Content-Length", &self.body.len().to_string());
-        self.headers.set("Connection", "close");
-        self.headers.set("Content-Type", "text/plain; charset=utf-8");
+        self.headers.set(
+            headers::keys::CONTENT_LENGTH_HEADER,
+            &self.body.len().to_string(),
+        );
+
+        self.headers.set(headers::keys::CONNECTION_HEADER, "close");
+
+        if !self.headers.contains(headers::keys::CONTENT_TYPE_KEY) {
+            self.headers
+                .set(headers::keys::CONTENT_TYPE_KEY, CONTENT_TYPE_JSON);
+        }
     }
 }

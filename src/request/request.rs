@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use tokio::io::AsyncReadExt;
 
-use crate::headers::Headers;
+use crate::headers::{self, Headers};
 
 use super::body;
 use super::request_line::RequestLine;
@@ -19,8 +19,6 @@ pub struct Request {
 }
 
 const BUFFER_SIZE: usize = 4096;
-
-const CONTENT_LENGTH_HEADER: &str = "Content-Length";
 
 impl Request {
     fn new() -> Self {
@@ -101,7 +99,10 @@ impl Request {
                         // Technically, there are cases where a body can be present without
                         // a Content-Length header (e.g., Transfer-Encoding: chunked), but
                         // for simplicity, we only check for Content-Length here.
-                        if let Some(cl) = self.headers.get::<usize>(CONTENT_LENGTH_HEADER) {
+                        if let Some(cl) = self
+                            .headers
+                            .get::<usize>(headers::keys::CONTENT_LENGTH_HEADER)
+                        {
                             self.body.reserve(cl);
                             self.state = RequestState::StateBody;
                         } else {
@@ -116,7 +117,9 @@ impl Request {
                     }
                 }
                 RequestState::StateBody => {
-                    let content_length = self.headers.get::<usize>(CONTENT_LENGTH_HEADER);
+                    let content_length = self
+                        .headers
+                        .get::<usize>(headers::keys::CONTENT_LENGTH_HEADER);
 
                     if content_length.is_none() {
                         self.state = RequestState::StateDone;
