@@ -19,6 +19,10 @@ impl Response {
         }
     }
 
+    pub fn set_status_code(&mut self, status_code: StatusCode) {
+        self.status_code = status_code;
+    }
+
     pub(crate) async fn write_response<W: tokio::io::AsyncWrite + Unpin>(
         &self,
         writer: &mut W,

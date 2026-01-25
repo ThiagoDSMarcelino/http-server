@@ -33,6 +33,7 @@ impl Request {
         }
     }
 
+    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_headers(&self) -> &Headers {
         &self.headers
     }
@@ -41,10 +42,12 @@ impl Request {
         self.state == RequestState::StateDone
     }
 
+    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_method(&self) -> &str {
         &self.method
     }
 
+    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_path(&self) -> &str {
         &self.path
     }
@@ -54,6 +57,7 @@ impl Request {
         &self.version
     }
 
+    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_body(&self) -> &Vec<u8> {
         &self.body
     }

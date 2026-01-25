@@ -1,39 +1,48 @@
-use crate::{request::Request, response::Response};
+use std::sync::Arc;
+
+use crate::{
+    request::Request,
+    response::{Response, StatusCode},
+};
 use tokio::{io::AsyncWriteExt, net::TcpListener};
 
+pub type Handler = Arc<dyn Fn() -> Result<(), String> + Send + Sync + 'static>;
+
 pub struct Server {
-    listener: TcpListener,
+    addr: String,
+    handler: Handler,
 }
 
 impl Server {
-    pub async fn new(host: &str, port: u16) -> Result<Self, std::io::Error> {
-        let listener = TcpListener::bind(format!("{}:{}", host, port)).await?;
-        Ok(Server { listener })
+    pub fn new(addr: &str, handler: Handler) -> Self {
+        Server {
+            addr: addr.to_string(),
+            handler,
+        }
     }
 
     pub async fn serve(&self) -> Result<(), std::io::Error> {
+        let listener = TcpListener::bind(&self.addr).await?;
+
         loop {
-            let (mut stream, _) = self.listener.accept().await?;
+            let (mut stream, _) = listener.accept().await?;
+
+            let handler = self.handler.clone();
 
             tokio::spawn(async move {
-                let request = match Request::from_async_reader(&mut stream).await {
-                    Ok(req) => req,
-                    Err(e) => {
-                        // TODO: write error response
-                        eprintln!("Failed to parse request: {}", e);
-                        return;
-                    }
-                };
-
-                println!(
-                    "Received a request: {} {}",
-                    request.get_method(),
-                    request.get_path()
-                );
-                println!("{:?}", request.get_headers());
-                println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
-
                 let mut response = Response::new();
+
+                match Request::from_async_reader(&mut stream).await {
+                    Ok(_) => {
+                        if let Err(_) = (handler)() {
+                            response.set_status_code(StatusCode::InternalServerError);
+                        }
+                    }
+                    Err(_) => {
+                        response.set_status_code(StatusCode::BadRequest);
+                    }
+                }
+
                 response.set_default_headers();
                 if let Err(err) = response.write_response(&mut stream).await {
                     eprintln!("Failed to write response: {}", err);
