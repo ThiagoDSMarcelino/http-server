@@ -21,6 +21,18 @@ impl Router {
         self.endpoints.insert(format!("GET {}", path), handler);
     }
 
+    pub fn delete(&mut self, path: &str, handler: Handler) {
+        self.endpoints.insert(format!("DELETE {}", path), handler);
+    }
+
+    pub fn put(&mut self, path: &str, handler: Handler) {
+        self.endpoints.insert(format!("PUT {}", path), handler);
+    }
+
+    pub fn patch(&mut self, path: &str, handler: Handler) {
+        self.endpoints.insert(format!("PATCH {}", path), handler);
+    }
+
     pub(crate) fn build(self) -> Handler {
         Arc::new(move |req: &Request, res: &mut Response| {
             let key = format!("{} {}", req.method(), req.path());

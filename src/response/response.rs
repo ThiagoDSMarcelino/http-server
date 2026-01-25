@@ -35,9 +35,14 @@ impl Response {
 
         match serde_json::to_vec(&body) {
             Ok(json_body) => self.body = json_body,
-            Err(_) => {
+            Err(err) => {
                 self.status_code = StatusCode::InternalServerError;
-                self.body = b"{\"error\":\"Failed to serialize JSON\"}".to_vec();
+                let error_response = serde_json::json!({
+                    "error": err.to_string(),
+                    "message": "Failed to serialize JSON",
+                    "status_code": 500
+                });
+                self.body = serde_json::to_vec(&error_response).unwrap_or_default();
             }
         }
     }
