@@ -33,7 +33,7 @@ impl Request {
         }
     }
 
-    pub fn get_headers(&self) -> &Headers {
+    pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
@@ -41,7 +41,7 @@ impl Request {
         self.state == RequestState::StateDone
     }
 
-    pub fn get_method(&self) -> &str {
+    pub fn method(&self) -> &str {
         &self.method
     }
 
@@ -49,11 +49,11 @@ impl Request {
         &self.path
     }
 
-    pub fn get_version(&self) -> &str {
+    pub fn http_version(&self) -> &str {
         &self.version
     }
 
-    pub fn get_body(&self) -> &Vec<u8> {
+    pub fn body(&self) -> &Vec<u8> {
         &self.body
     }
 
@@ -230,27 +230,24 @@ mod tests {
 
         let request = request_result.unwrap();
 
-        assert_eq!(request.get_method(), "GET");
+        assert_eq!(request.method(), "GET");
         assert_eq!(request.uri(), "/");
-        assert_eq!(request.get_version(), "HTTP/1.1");
+        assert_eq!(request.http_version(), "HTTP/1.1");
 
-        assert!(request.get_headers().get::<String>("Host").is_some());
+        assert!(request.headers().get::<String>("Host").is_some());
         assert_eq!(
-            request.get_headers().get::<String>("Host").unwrap(),
+            request.headers().get::<String>("Host").unwrap(),
             "localhost:8080"
         );
 
-        assert!(request.get_headers().get::<String>("User-Agent").is_some());
+        assert!(request.headers().get::<String>("User-Agent").is_some());
         assert_eq!(
-            request.get_headers().get::<String>("User-Agent").unwrap(),
+            request.headers().get::<String>("User-Agent").unwrap(),
             "curl/7.81.0"
         );
 
-        assert!(request.get_headers().get::<String>("Accept").is_some());
-        assert_eq!(
-            request.get_headers().get::<String>("Accept").unwrap(),
-            "*/*"
-        );
+        assert!(request.headers().get::<String>("Accept").is_some());
+        assert_eq!(request.headers().get::<String>("Accept").unwrap(), "*/*");
     }
 
     #[tokio::test]
@@ -262,26 +259,23 @@ mod tests {
 
         let request = request_result.unwrap();
 
-        assert_eq!(request.get_method(), "GET");
+        assert_eq!(request.method(), "GET");
         assert_eq!(request.uri(), "/");
-        assert_eq!(request.get_version(), "HTTP/1.1");
+        assert_eq!(request.http_version(), "HTTP/1.1");
 
-        assert!(request.get_headers().get::<String>("Host").is_some());
+        assert!(request.headers().get::<String>("Host").is_some());
         assert_eq!(
-            request.get_headers().get::<String>("Host").unwrap(),
+            request.headers().get::<String>("Host").unwrap(),
             "localhost:8080"
         );
 
-        assert!(request.get_headers().get::<String>("User-Agent").is_some());
+        assert!(request.headers().get::<String>("User-Agent").is_some());
         assert_eq!(
-            request.get_headers().get::<String>("User-Agent").unwrap(),
+            request.headers().get::<String>("User-Agent").unwrap(),
             "curl/7.81.0"
         );
 
-        assert!(request.get_headers().get::<String>("Accept").is_some());
-        assert_eq!(
-            request.get_headers().get::<String>("Accept").unwrap(),
-            "*/*"
-        );
+        assert!(request.headers().get::<String>("Accept").is_some());
+        assert_eq!(request.headers().get::<String>("Accept").unwrap(), "*/*");
     }
 }

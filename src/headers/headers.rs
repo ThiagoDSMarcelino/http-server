@@ -4,7 +4,7 @@ use regex::Regex;
 
 #[derive(Debug)]
 pub struct Headers {
-    data: HashMap<String, String>,
+    data: HashMap<String, (String, String)>,
 }
 
 // Theoretically, \n could be the separator as well if the first line ends with it, but for now we only support \r\n.
@@ -24,9 +24,8 @@ fn is_valid_key(key: &str) -> bool {
 
 // Header field names are case-insensitive
 // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
-// However the original casing should be preserved when setting and getting values.
-// For simplicity, we store all keys in lowercase.
-// TODO: Fix to preserve original casing when needed.
+// TODO: Find a better way to store headers while keeping the original case of the keys
+// for now we store the original key alongside the value
 impl Headers {
     pub fn new() -> Self {
         Headers {
@@ -34,14 +33,16 @@ impl Headers {
         }
     }
 
-    pub fn iter(&'_ self) -> std::collections::hash_map::Iter<'_, String, String> {
-        self.data.iter()
+    pub fn iter(&'_ self) -> impl Iterator<Item = (&String, &String)> {
+        self.data
+            .values()
+            .map(|(original_key, value)| (original_key, value))
     }
 
     pub fn get<T: std::str::FromStr>(&self, key: &str) -> Option<T> {
         let local_key = key.to_lowercase();
 
-        if let Some(value) = self.data.get(&local_key) {
+        if let Some((_, value)) = self.data.get(&local_key) {
             if let Ok(parsed) = value.trim().parse::<T>() {
                 return Some(parsed);
             }
@@ -53,7 +54,8 @@ impl Headers {
     pub fn set(&mut self, key: &str, value: &str) {
         let local_key = key.to_lowercase().to_string();
 
-        self.data.insert(local_key, value.to_string());
+        self.data
+            .insert(local_key, (key.to_string(), value.to_string()));
     }
 
     pub fn add(&mut self, key: &str, value: &str) {
@@ -61,11 +63,11 @@ impl Headers {
 
         self.data
             .entry(local_key)
-            .and_modify(|current| {
+            .and_modify(|(_, current)| {
                 current.push_str(", ");
                 current.push_str(value);
             })
-            .or_insert(value.to_string());
+            .or_insert((key.to_string(), value.to_string()));
     }
 
     pub fn contains(&self, key: &str) -> bool {
