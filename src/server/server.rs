@@ -3,25 +3,17 @@ use tokio::{io::AsyncWriteExt, net::TcpListener};
 
 pub struct Server {
     listener: TcpListener,
-    closed: bool,
 }
 
 impl Server {
     pub async fn new(host: &str, port: u16) -> Result<Self, std::io::Error> {
         let listener = TcpListener::bind(format!("{}:{}", host, port)).await?;
-        Ok(Server {
-            listener,
-            closed: false,
-        })
+        Ok(Server { listener })
     }
 
     pub async fn serve(&self) -> Result<(), std::io::Error> {
         loop {
             let (mut stream, _) = self.listener.accept().await?;
-
-            if self.closed {
-                return Ok(());
-            }
 
             tokio::spawn(async move {
                 let request = match Request::from_async_reader(&mut stream).await {
