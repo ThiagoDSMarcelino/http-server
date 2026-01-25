@@ -1,4 +1,4 @@
-use crate::{response::StatusCode, results::http_error::HttpError};
+use crate::{response::StatusCode, responses::http_error::HttpError};
 
 pub struct NotFoundError {
     message: String,

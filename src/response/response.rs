@@ -2,7 +2,7 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{
     headers::{self, Headers},
-    response::StatusCode, results::HttpResult,
+    response::StatusCode, responses::HttpResponse,
 };
 
 pub struct Response {
@@ -32,7 +32,7 @@ impl Response {
         }
     }
 
-    pub(crate) fn set_result(&mut self, result: Box<dyn HttpResult>) {
+    pub(crate) fn set_result(&mut self, result: Box<dyn HttpResponse>) {
         self.status_code = result.status_code();
         self.body = result.into_response();
     }

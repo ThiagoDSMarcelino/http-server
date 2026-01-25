@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::{response::StatusCode, results::http_result::HttpResult};
+use crate::{response::StatusCode, responses::http_response::HttpResponse};
 
 pub trait HttpError: Sync + Send {
     fn message(&self) -> &str;
@@ -24,7 +24,7 @@ impl HttpErrorResponse {
     }
 }
 
-impl<T> HttpResult for T
+impl<T> HttpResponse for T
 where
     T: HttpError,
 {

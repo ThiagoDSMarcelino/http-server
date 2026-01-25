@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::{StatusCode, results::HttpResult};
+use crate::{StatusCode, responses::HttpResponse};
 
 pub struct OkResult {
     data: Vec<u8>,
@@ -19,7 +19,7 @@ impl OkResult {
     }
 }
 
-impl HttpResult for OkResult {
+impl HttpResponse for OkResult {
     fn into_response(self: Box<Self>) -> Vec<u8> {
         self.data
     }

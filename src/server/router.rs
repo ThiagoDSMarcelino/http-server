@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{EndpointHandler, Request, Response, results::NotFoundError};
+use crate::{EndpointHandler, Request, Response, responses::NotFoundError};
 
 pub struct Router {
     endpoints: HashMap<String, EndpointHandler>,

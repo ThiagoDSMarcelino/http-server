@@ -1,5 +1,5 @@
 mod handler;
-pub mod results;
+pub mod responses;
 mod router;
 mod server;
 

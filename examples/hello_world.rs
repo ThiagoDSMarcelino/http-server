@@ -1,6 +1,6 @@
 // cargo run --example hello_world
 
-use http_server::{Router, Server, results::{BadRequestError, OkResult}};
+use http_server::{Router, Server, responses::{BadRequestError, OkResult}};
 
 use std::sync::Arc;
 

@@ -7,4 +7,4 @@ pub use request::Request;
 pub use response::*;
 pub use server::*;
 
-pub use server::results;
+pub use server::responses;
