@@ -4,6 +4,7 @@ pub enum StatusCode {
     BadRequest = 400,
     NotFound = 404,
     InternalServerError = 500,
+    NotImplemented = 501,
 }
 
 impl StatusCode {
@@ -13,6 +14,7 @@ impl StatusCode {
             StatusCode::BadRequest => "Bad Request",
             StatusCode::NotFound => "Not Found",
             StatusCode::InternalServerError => "Internal Server Error",
+            StatusCode::NotImplemented => "Not Implemented",
         }
     }
 }

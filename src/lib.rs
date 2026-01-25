@@ -4,6 +4,7 @@ mod response;
 mod server;
 
 pub use request::Request;
-pub use response::Response;
-pub use server::BadRequestError;
-pub use server::{Handler, Server};
+pub use response::*;
+pub use server::*;
+
+pub use server::errors;

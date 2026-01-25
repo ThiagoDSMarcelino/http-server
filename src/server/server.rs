@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     request::Request,
     response::{Response, StatusCode},
-    server::http_error::HttpError,
+    server::errors::HttpError,
 };
 use tokio::{io::AsyncWriteExt, net::TcpListener};
 
