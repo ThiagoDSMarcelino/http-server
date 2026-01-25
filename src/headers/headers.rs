@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::OnceLock};
 
 use regex::Regex;
 
@@ -13,12 +13,13 @@ const HEADER_SEPARATOR: u8 = b':';
 const SPACE: &[u8] = b" ";
 
 fn is_valid_key(key: &str) -> bool {
-    let valid_key_chars_regex = Regex::new("^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$").unwrap();
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let regex = RE.get_or_init(|| Regex::new("^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$").unwrap());
 
     !key.as_bytes().starts_with(SPACE)
         && !key.as_bytes().ends_with(SPACE)
         && !key.is_empty()
-        && valid_key_chars_regex.is_match(key)
+        && regex.is_match(key)
 }
 
 // Header field names are case-insensitive
