@@ -32,7 +32,7 @@ impl Server {
             tokio::spawn(async move {
                 let mut response = Response::new();
 
-                match Request::from_async_reader(&mut stream).await {
+                match Request::from_reader(&mut stream).await {
                     Ok(request) => {
                         if let Err(_) = (handler)(&request, &mut response) {
                             response.set_status_code(StatusCode::InternalServerError);

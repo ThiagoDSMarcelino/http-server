@@ -8,7 +8,6 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let handler: Handler = Arc::new(|req, _| {
         println!("Handling request for {}", req.uri());
-        
         Ok(())
     });
 

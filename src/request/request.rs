@@ -6,8 +6,6 @@ use super::body;
 use super::request_line::RequestLine;
 use super::request_state::RequestState;
 
-use std::io;
-
 pub struct Request {
     method: String,
     path: String,
@@ -138,27 +136,7 @@ impl Request {
         Ok(read)
     }
 
-    #[allow(dead_code)]
-    fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, std::io::Error> {
-        let mut request = Request::new();
-        let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-        let mut len = 0;
-
-        while !request.done() {
-            let read_len = reader.read(&mut buffer[len..])?;
-
-            len += read_len;
-
-            let processed_len = request.parse(&buffer[..len])?;
-
-            buffer.copy_within(processed_len..len, 0);
-            len -= processed_len;
-        }
-
-        return Ok(request);
-    }
-
-    pub(crate) async fn from_async_reader<R: tokio::io::AsyncRead + Unpin>(
+    pub(crate) async fn from_reader<R: tokio::io::AsyncRead + Unpin>(
         mut reader: R,
     ) -> Result<Self, std::io::Error> {
         let mut request = Request::new();
@@ -199,34 +177,42 @@ mod tests {
         }
     }
 
-    impl io::Read for ChunkReader<'_> {
-        // Read reads up to len(p) or numBytesPerRead bytes from the string per call
-        // its useful for simulating reading a variable number of bytes per chunk from a network connection
-        fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
-            if self.pos >= self.data.len() {
-                return Err(std::io::Error::new(
+    impl tokio::io::AsyncRead for ChunkReader<'_> {
+        fn poll_read(
+            self: std::pin::Pin<&mut Self>,
+            _: &mut std::task::Context<'_>,
+            buf: &mut tokio::io::ReadBuf<'_>,
+        ) -> std::task::Poll<io::Result<()>> {
+            let me = self.get_mut();
+
+            if me.pos >= me.data.len() {
+                return Poll::Ready(Err(std::io::Error::new(
                     std::io::ErrorKind::UnexpectedEof,
                     "EOF",
-                ));
+                )));
             }
 
-            let end_index = std::cmp::min(self.pos + self.num_bytes_per_read, self.data.len());
-            let available_chunk = end_index - self.pos;
-            let n = std::cmp::min(buf.len(), available_chunk);
+            let end_index = std::cmp::min(me.pos + me.num_bytes_per_read, me.data.len());
+            let available_chunk = end_index - me.pos;
 
-            buf[..n].copy_from_slice(&self.data[self.pos..self.pos + n]);
-            self.pos += n;
+            let n = std::cmp::min(buf.remaining(), available_chunk);
 
-            Ok(n)
+            buf.put_slice(&me.data[me.pos..me.pos + n]);
+
+            me.pos += n;
+
+            Poll::Ready(Ok(()))
         }
     }
 
+    use std::{io, task::Poll};
+
     use super::*;
 
-    #[test]
-    fn test_good_get_request_receiving_under_size_buffer() {
+    #[tokio::test]
+    async fn test_good_get_request_receiving_under_size_buffer() {
         let reader = ChunkReader::new(b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n", 8);
-        let request_result = Request::from_reader(reader);
+        let request_result = Request::from_reader(reader).await;
 
         assert!(request_result.is_ok());
 
@@ -255,10 +241,10 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_good_get_request_receiving_over_size_buffer() {
+    #[tokio::test]
+    async fn test_good_get_request_receiving_over_size_buffer() {
         let reader = ChunkReader::new(b"GET / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n", 1024);
-        let request_result = Request::from_reader(reader);
+        let request_result = Request::from_reader(reader).await;
 
         assert!(request_result.is_ok());
 
