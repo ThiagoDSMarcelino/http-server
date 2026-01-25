@@ -6,7 +6,7 @@ use crate::{
 };
 use tokio::{io::AsyncWriteExt, net::TcpListener};
 
-pub type Handler = Arc<dyn Fn() -> Result<(), String> + Send + Sync + 'static>;
+pub type Handler = Arc<dyn Fn(&Request, &mut Response) -> Result<(), String> + Send + Sync + 'static>;
 
 pub struct Server {
     addr: String,
@@ -33,8 +33,8 @@ impl Server {
                 let mut response = Response::new();
 
                 match Request::from_async_reader(&mut stream).await {
-                    Ok(_) => {
-                        if let Err(_) = (handler)() {
+                    Ok(request) => {
+                        if let Err(_) = (handler)(&request, &mut response) {
                             response.set_status_code(StatusCode::InternalServerError);
                         }
                     }

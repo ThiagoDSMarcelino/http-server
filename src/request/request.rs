@@ -33,7 +33,6 @@ impl Request {
         }
     }
 
-    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_headers(&self) -> &Headers {
         &self.headers
     }
@@ -42,22 +41,18 @@ impl Request {
         self.state == RequestState::StateDone
     }
 
-    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_method(&self) -> &str {
         &self.method
     }
 
-    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_path(&self) -> &str {
         &self.path
     }
 
-    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_version(&self) -> &str {
         &self.version
     }
 
-    #[allow(dead_code)] // TODO: Remove when used
     pub fn get_body(&self) -> &Vec<u8> {
         &self.body
     }
@@ -143,8 +138,8 @@ impl Request {
         Ok(read)
     }
 
-    #[allow(dead_code)] // TODO: Remove when used
-    pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, std::io::Error> {
+    #[allow(dead_code)]
+    fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, std::io::Error> {
         let mut request = Request::new();
         let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
         let mut len = 0;
@@ -163,7 +158,7 @@ impl Request {
         return Ok(request);
     }
 
-    pub async fn from_async_reader<R: tokio::io::AsyncRead + Unpin>(
+    pub(crate) async fn from_async_reader<R: tokio::io::AsyncRead + Unpin>(
         mut reader: R,
     ) -> Result<Self, std::io::Error> {
         let mut request = Request::new();

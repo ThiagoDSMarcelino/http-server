@@ -1,5 +1,5 @@
 #[derive(PartialEq)]
-pub enum RequestState {
+pub(super) enum RequestState {
     StateInit = 0,
     StateRequestLine = 1,
     StateHeaders = 2,

@@ -1,4 +1,4 @@
-pub(crate) fn parse(
+pub(super) fn parse(
     body: &mut Vec<u8>,
     data: &[u8],
     content_length: usize,

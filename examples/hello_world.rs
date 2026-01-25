@@ -1,4 +1,4 @@
-//     cargo run --example hello_world
+// cargo run --example hello_world
 
 use http_server::{Handler, Server};
 
@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let handler: Handler = Arc::new(|| {
+    let handler: Handler = Arc::new(|_, _| {
         println!("Handling request");
         Ok(())
     });

@@ -1,6 +1,6 @@
 use std::io;
 
-pub(crate) struct RequestLine {
+pub(super) struct RequestLine {
     method: String,
     path: String,
     version: String,
