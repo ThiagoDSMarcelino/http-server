@@ -1,9 +1,8 @@
-use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 
 use crate::{
     headers::{self, Headers},
-    response::StatusCode,
+    response::StatusCode, results::HttpResult,
 };
 
 pub struct Response {
@@ -17,7 +16,15 @@ const HTTP_VERSION: &str = "HTTP/1.1";
 const CONTENT_TYPE_JSON: &str = "application/json; charset=utf-8";
 
 impl Response {
-    pub fn new() -> Self {
+    pub fn headers(&mut self) -> &mut Headers {
+        &mut self.headers
+    }
+
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        &mut self.headers
+    }
+
+    pub(crate) fn new() -> Self {
         Response {
             body: Vec::new(),
             headers: Headers::new(),
@@ -25,26 +32,13 @@ impl Response {
         }
     }
 
-    pub fn set_status_code(&mut self, status_code: StatusCode) {
-        self.status_code = status_code;
+    pub(crate) fn set_result(&mut self, result: Box<dyn HttpResult>) {
+        self.status_code = result.status_code();
+        self.body = result.into_response();
     }
 
-    pub fn json<T: Serialize>(&mut self, body: T) {
-        self.headers
-            .set(headers::keys::CONTENT_TYPE_KEY, CONTENT_TYPE_JSON);
-
-        match serde_json::to_vec(&body) {
-            Ok(json_body) => self.body = json_body,
-            Err(err) => {
-                self.status_code = StatusCode::InternalServerError;
-                let error_response = serde_json::json!({
-                    "error": err.to_string(),
-                    "message": "Failed to serialize JSON",
-                    "status_code": 500
-                });
-                self.body = serde_json::to_vec(&error_response).unwrap_or_default();
-            }
-        }
+    pub(crate) fn set_status_code(&mut self, status_code: StatusCode) {
+        self.status_code = status_code;
     }
 
     pub(crate) async fn write_response<W: tokio::io::AsyncWrite + Unpin>(
@@ -81,9 +75,7 @@ impl Response {
 
         self.headers.set(headers::keys::CONNECTION_HEADER, "close");
 
-        if !self.headers.contains(headers::keys::CONTENT_TYPE_KEY) {
-            self.headers
-                .set(headers::keys::CONTENT_TYPE_KEY, CONTENT_TYPE_JSON);
-        }
+        self.headers
+            .set(headers::keys::CONTENT_TYPE_KEY, CONTENT_TYPE_JSON);
     }
 }

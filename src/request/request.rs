@@ -57,6 +57,10 @@ impl Request {
         &self.body
     }
 
+    pub fn query(&self) -> &HashMap<String, String> {
+        &self.query
+    }
+
     fn set_request_line(&mut self, rl: RequestLine) {
         self.method = rl.method;
         self.path = rl.path;

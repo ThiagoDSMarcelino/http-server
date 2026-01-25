@@ -1,5 +1,5 @@
-pub mod errors;
 mod handler;
+pub mod results;
 mod router;
 mod server;
 

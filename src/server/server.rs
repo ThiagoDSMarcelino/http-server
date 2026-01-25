@@ -33,10 +33,8 @@ impl Server {
 
                 match Request::from_reader(&mut stream).await {
                     Ok(request) => {
-                        if let Err(err) = (handler)(&request, &mut response) {
-                            response.set_status_code(err.status_code());
-                            response.json(err.json_response());
-                        }
+                        let result = (handler)(&request, &mut response);
+                        response.set_result(result);
                     }
                     Err(_) => {
                         response.set_status_code(StatusCode::BadRequest);
@@ -44,6 +42,7 @@ impl Server {
                 }
 
                 response.set_default_headers();
+
                 if let Err(err) = response.write_response(&mut stream).await {
                     eprintln!("Failed to write response: {}", err);
                 }

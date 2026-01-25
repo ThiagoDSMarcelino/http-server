@@ -1,6 +1,6 @@
 // cargo run --example hello_world
 
-use http_server::{Router, Server};
+use http_server::{Router, Server, results::{BadRequestError, OkResult}};
 
 use std::sync::Arc;
 
@@ -10,9 +10,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     router.get(
         "/",
-        Arc::new(|_, res| {
-            res.json("Hello, World!");
-            Ok(())
+        Arc::new(|req, _| {
+            if let Some(value) = req.query().get("error") {
+                if value == "true" {
+                    return BadRequestError::with_message("Bad request example").into();
+                }
+            }
+
+            OkResult::new("Hello, World!").into()
         }),
     );
 

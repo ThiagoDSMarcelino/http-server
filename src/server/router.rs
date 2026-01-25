@@ -1,9 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{Handler, Request, Response, errors::NotFoundError};
+use crate::{EndpointHandler, Request, Response, results::NotFoundError};
 
 pub struct Router {
-    endpoints: HashMap<String, Handler>,
+    endpoints: HashMap<String, EndpointHandler>,
 }
 
 impl Router {
@@ -13,27 +13,27 @@ impl Router {
         }
     }
 
-    pub fn post(&mut self, path: &str, handler: Handler) {
+    pub fn post(&mut self, path: &str, handler: EndpointHandler) {
         self.endpoints.insert(format!("POST {}", path), handler);
     }
 
-    pub fn get(&mut self, path: &str, handler: Handler) {
+    pub fn get(&mut self, path: &str, handler: EndpointHandler) {
         self.endpoints.insert(format!("GET {}", path), handler);
     }
 
-    pub fn delete(&mut self, path: &str, handler: Handler) {
+    pub fn delete(&mut self, path: &str, handler: EndpointHandler) {
         self.endpoints.insert(format!("DELETE {}", path), handler);
     }
 
-    pub fn put(&mut self, path: &str, handler: Handler) {
+    pub fn put(&mut self, path: &str, handler: EndpointHandler) {
         self.endpoints.insert(format!("PUT {}", path), handler);
     }
 
-    pub fn patch(&mut self, path: &str, handler: Handler) {
+    pub fn patch(&mut self, path: &str, handler: EndpointHandler) {
         self.endpoints.insert(format!("PATCH {}", path), handler);
     }
 
-    pub(crate) fn build(self) -> Handler {
+    pub(crate) fn build(self) -> EndpointHandler {
         Arc::new(move |req: &Request, res: &mut Response| {
             let key = format!("{} {}", req.method(), req.path());
 
@@ -41,11 +41,9 @@ impl Router {
                 return handler(req, res);
             }
 
-            Err(NotFoundError::with_message(format!(
-                "Cannot {} {}",
-                req.method(),
-                req.path()
-            )))?
+            let error =
+                NotFoundError::with_message(format!("Cannot {} {}", req.method(), req.path()));
+            return error.into();
         })
     }
 }

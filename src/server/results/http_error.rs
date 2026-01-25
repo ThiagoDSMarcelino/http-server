@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::response::StatusCode;
+use crate::{response::StatusCode, results::http_result::HttpResult};
 
 pub trait HttpError: Sync + Send {
     fn message(&self) -> &str;
@@ -24,14 +24,17 @@ impl HttpErrorResponse {
     }
 }
 
-impl dyn HttpError {
-    pub(crate) fn json_response(&self) -> HttpErrorResponse {
-        HttpErrorResponse::new(self.message(), self.status_code())
+impl<T> HttpResult for T
+where
+    T: HttpError,
+{
+    fn into_response(self: Box<Self>) -> Vec<u8> {
+        // TODO: Handle serialization errors properly
+        serde_json::to_vec(&HttpErrorResponse::new(self.message(), self.status_code()))
+            .unwrap_or_else(|_| "Error serializing".to_string().into_bytes())
     }
-}
 
-impl<T: HttpError + 'static> From<T> for Box<dyn HttpError> {
-    fn from(err: T) -> Self {
-        Box::new(err)
+    fn status_code(&self) -> StatusCode {
+        <Self as HttpError>::status_code(self)
     }
 }

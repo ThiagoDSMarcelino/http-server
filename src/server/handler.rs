@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use crate::{Request, Response, errors::HttpError};
+use crate::{Request, Response, results::HttpResult};
 
-pub type HttpResult<T> = Result<T, Box<dyn HttpError>>;
-pub type Handler = Arc<dyn Fn(&Request, &mut Response) -> HttpResult<()> + Send + Sync + 'static>;
+// FIXME: Maybe would be better to send a specific struct instead of using Request and Response directly
+// For handler cookies and other things
+pub type EndpointHandler =
+    Arc<dyn Fn(&Request, &mut Response) -> Box<dyn HttpResult> + Send + Sync + 'static>;
