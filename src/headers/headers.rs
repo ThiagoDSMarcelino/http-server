@@ -49,6 +49,14 @@ impl Headers {
         // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
         let local_key = key.to_lowercase().to_string();
 
+        self.data.insert(local_key, value.to_string());
+    }
+
+    pub fn add(&mut self, key: &str, value: &str) {
+        // Header field names are case-insensitive
+        // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
+        let local_key = key.to_lowercase().to_string();
+
         self.data
             .entry(local_key)
             .and_modify(|current| {
@@ -111,7 +119,7 @@ impl Headers {
                 .trim_start()
                 .to_string();
 
-            self.set(&key, &value);
+            self.add(&key, &value);
         }
     }
 }

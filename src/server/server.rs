@@ -1,7 +1,4 @@
-use crate::{
-    request::Request,
-    response::{self, StatusCode},
-};
+use crate::{request::Request, response::Response};
 use std::{io::Write, net::TcpListener};
 
 pub struct Server {
@@ -42,9 +39,10 @@ impl Server {
             println!("{:?}", request.get_headers());
             println!("Body: {:?}", String::from_utf8_lossy(&request.get_body()));
 
-            let response_headers = response::get_default_headers(0);
-            response::write_status_line(&mut stream, StatusCode::Ok)?;
-            response::write_headers(&mut stream, &response_headers)?;
+            let mut response = Response::new();
+
+            response.set_default_headers();
+            response.write_response(&mut stream)?;
 
             stream.flush()?;
         }
