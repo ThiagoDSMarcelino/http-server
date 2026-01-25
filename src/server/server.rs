@@ -3,10 +3,12 @@ use std::sync::Arc;
 use crate::{
     request::Request,
     response::{Response, StatusCode},
+    server::http_error::HttpError,
 };
 use tokio::{io::AsyncWriteExt, net::TcpListener};
 
-pub type Handler = Arc<dyn Fn(&Request, &mut Response) -> Result<(), String> + Send + Sync + 'static>;
+pub type HttpResult<T> = Result<T, Box<dyn HttpError>>;
+pub type Handler = Arc<dyn Fn(&Request, &mut Response) -> HttpResult<()> + Send + Sync + 'static>;
 
 pub struct Server {
     addr: String,
@@ -34,8 +36,9 @@ impl Server {
 
                 match Request::from_reader(&mut stream).await {
                     Ok(request) => {
-                        if let Err(_) = (handler)(&request, &mut response) {
-                            response.set_status_code(StatusCode::InternalServerError);
+                        if let Err(err) = (handler)(&request, &mut response) {
+                            response.set_status_code(err.status_code());
+                            response.json(err.json_response());
                         }
                     }
                     Err(_) => {

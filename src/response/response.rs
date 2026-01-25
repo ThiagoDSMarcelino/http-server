@@ -23,6 +23,11 @@ impl Response {
         self.status_code = status_code;
     }
 
+    pub fn json<JSON: Into<Vec<u8>>>(&mut self, body: JSON) {
+        self.headers.set("Content-Type", "application/json; charset=utf-8");
+        self.body = body.into();
+    }
+
     pub(crate) async fn write_response<W: tokio::io::AsyncWrite + Unpin>(
         &self,
         writer: &mut W,
