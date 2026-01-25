@@ -101,7 +101,8 @@ impl Request {
                         // Technically, there are cases where a body can be present without
                         // a Content-Length header (e.g., Transfer-Encoding: chunked), but
                         // for simplicity, we only check for Content-Length here.
-                        if self.headers.contains(CONTENT_LENGTH_HEADER) {
+                        if let Some(cl) = self.headers.get::<usize>(CONTENT_LENGTH_HEADER) {
+                            self.body.reserve(cl);
                             self.state = RequestState::StateBody;
                         } else {
                             self.state = RequestState::StateDone;
@@ -169,7 +170,6 @@ impl Request {
 
 #[cfg(test)]
 mod tests {
-
     struct ChunkReader<'a> {
         data: &'a [u8],
         num_bytes_per_read: usize,
