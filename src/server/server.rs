@@ -1,5 +1,7 @@
+use std::path::PathBuf;
+
 use crate::{
-    Router,
+    EndpointHandler, FileServer, Router,
     request::Request,
     response::{Response, StatusCode},
 };
@@ -8,15 +10,23 @@ use tokio::{io::AsyncWriteExt, net::TcpListener};
 /// Represents an HTTP server.
 pub struct Server {
     addr: String,
-    router: Router,
+    handler: EndpointHandler,
 }
 
 impl Server {
-    /// Creates a new Server instance with the specified address and router.
+    /// Creates a new Server instance that dispatches requests through a router.
     pub fn new(addr: &str, router: Router) -> Self {
         Server {
             addr: addr.to_string(),
-            router,
+            handler: router.build(),
+        }
+    }
+
+    /// Creates a new Server instance that serves static files from a directory.
+    pub fn from_dir<P: Into<PathBuf>>(addr: &str, dir: P) -> Self {
+        Server {
+            addr: addr.to_string(),
+            handler: FileServer::new(dir).build(),
         }
     }
 
@@ -24,12 +34,12 @@ impl Server {
     pub async fn serve(self) -> Result<(), std::io::Error> {
         let listener = TcpListener::bind(&self.addr).await?;
 
-        let routes_handler = self.router.build();
+        let request_handler = self.handler;
 
         loop {
             let (mut stream, _) = listener.accept().await?;
 
-            let handler = routes_handler.clone();
+            let handler = request_handler.clone();
 
             tokio::spawn(async move {
                 let mut response = Response::new();

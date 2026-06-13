@@ -10,6 +10,7 @@ pub struct Response {
     body: Vec<u8>,
     headers: Headers,
     status_code: StatusCode,
+    content_type: Option<String>,
 }
 
 const HTTP_VERSION: &str = "HTTP/1.1";
@@ -32,11 +33,13 @@ impl Response {
             body: Vec::new(),
             headers: Headers::new(),
             status_code: StatusCode::Ok,
+            content_type: None,
         }
     }
 
     pub(crate) fn set_result(&mut self, result: Box<dyn HttpResponse>) {
         self.status_code = result.status_code();
+        self.content_type = result.content_type().map(|ct| ct.to_string());
         self.body = result.into_response();
     }
 
@@ -78,7 +81,8 @@ impl Response {
 
         self.headers.set(headers::keys::CONNECTION_HEADER, "close");
 
+        let content_type = self.content_type.as_deref().unwrap_or(CONTENT_TYPE_JSON);
         self.headers
-            .set(headers::keys::CONTENT_TYPE_KEY, CONTENT_TYPE_JSON);
+            .set(headers::keys::CONTENT_TYPE_KEY, content_type);
     }
 }

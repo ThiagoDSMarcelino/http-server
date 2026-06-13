@@ -9,8 +9,9 @@ A lightweight, async HTTP server library built in Rust on top of [Tokio](https:/
 - Async request handling with Tokio
 - HTTP/1.x request parsing (request line, headers, body, query params)
 - Method-based routing (GET, POST, PUT, DELETE, PATCH)
+- Static file serving from a directory (with path-traversal protection and Content-Type detection)
 - Trait-based response system with automatic JSON serialization
-- Built-in response types: `OkResponse`, `BadRequestError`, `NotFoundError`, `NotImplementedError`
+- Built-in response types: `OkResponse`, `FileResponse`, `BadRequestError`, `NotFoundError`, `NotImplementedError`
 - Case-insensitive header management
 
 ## Installation
@@ -20,7 +21,9 @@ This library is not published on crates.io. It was created for learning purposes
 To use it locally, clone the repository and reference it as a path dependency in your `Cargo.toml`:
 
 ```bash
-git clone https://github.com/<your-username>/http-server.git
+git clone https://github.com/ThiagoDSMarcelino/http-server.git
+# or via SSH
+git clone git@github.com:ThiagoDSMarcelino/http-server.git
 ```
 
 Then in your project's `Cargo.toml`:
@@ -32,6 +35,11 @@ tokio = { version = "1", features = ["full"] }
 ```
 
 ## Quick Start
+
+### Hello World
+
+Sets up a router with a single `GET /` route that returns `Hello, World!`, or a
+`400 Bad Request` when called with `?error=true`.
 
 ```rust
 use http_server::{Router, Server, responses::{BadRequestError, OkResponse}};
@@ -68,6 +76,34 @@ Run the included example:
 cargo run --example hello_world
 ```
 
+### Serving Static Files
+
+Instead of a router, a server can serve files directly from a directory. A
+request for `/` resolves to `index.html` inside the directory, the `Content-Type`
+is inferred from each file's extension, and paths that try to escape the
+directory (e.g. using `..`) are rejected with a 404.
+
+```rust
+use http_server::Server;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Serve every file found under ./public
+    let server = Server::from_dir("127.0.0.1:8080", "public");
+
+    println!("Listening on http://127.0.0.1:8080");
+    server.serve().await?;
+
+    Ok(())
+}
+```
+
+Run the included example:
+
+```bash
+cargo run --example static_files
+```
+
 ## Project Structure
 
 ```text
@@ -77,10 +113,11 @@ src/
 ├── request/          # HTTP request parsing (state machine)
 ├── response/         # Response struct and status codes
 └── server/
-    ├── server.rs     # TCP listener and connection handling
-    ├── router.rs     # Method + path routing
-    ├── handler.rs    # EndpointHandler type alias
-    └── responses/    # Built-in response and error types
+    ├── server.rs      # TCP listener and connection handling
+    ├── router.rs      # Method + path routing
+    ├── file_server.rs # Static file serving from a directory
+    ├── handler.rs     # EndpointHandler type alias
+    └── responses/     # Built-in response and error types
 ```
 
 ## Documentation
