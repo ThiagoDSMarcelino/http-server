@@ -122,10 +122,18 @@ src/
 
 ## Documentation
 
+The full **API reference** is generated from the source by [rustdoc]. Build and
+open it locally with:
+
+```bash
+cargo doc --no-deps --open
+```
+
 More detailed documentation is available in the [`docs/`](docs/) folder:
 
-- [API Reference](docs/api-reference.md) — All public types, structs, and functions
 - [Architecture](docs/architecture.md) — Request lifecycle and internal design
+
+[rustdoc]: https://doc.rust-lang.org/rustdoc/
 
 ## License
 
