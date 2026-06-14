@@ -1,6 +1,9 @@
 // cargo run --example hello_world
 
-use http_server::{Router, Server, responses::{BadRequestError, OkResponse}};
+use http_server::{
+    Router, Server,
+    responses::{BadRequestError, OkResponse},
+};
 
 use std::sync::Arc;
 
@@ -25,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let server = Server::new(addr, router);
 
-    println!("Server is running on {}", addr);
+    println!("Server is running on http://{}", addr);
     server.serve().await?;
 
     Ok(())

@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // resolves to "index.html" inside it.
     let server = Server::from_dir(addr, "examples/public");
 
-    println!("Serving ./examples/public on {}", addr);
+    println!("Serving ./examples/public on http://{}", addr);
     server.serve().await?;
 
     Ok(())
